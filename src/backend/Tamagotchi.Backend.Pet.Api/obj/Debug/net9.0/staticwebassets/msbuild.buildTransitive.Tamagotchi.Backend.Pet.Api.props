@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\Tamagotchi.Backend.Pet.Api.props" />
-</Project>
