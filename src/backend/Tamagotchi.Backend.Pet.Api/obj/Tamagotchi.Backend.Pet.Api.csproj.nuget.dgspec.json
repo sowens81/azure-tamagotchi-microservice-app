@@ -1,25 +1,32 @@
 {
   "format": 1,
   "restore": {
-    "/Users/steve/Repos/Tamagotchi/src/backend/Tamagotchi.Backend.Pet.Api/Tamagotchi.Backend.Pet.Api.csproj": {}
+    "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.Pet.Api\\Tamagotchi.Backend.Pet.Api.csproj": {}
   },
   "projects": {
-    "/Users/steve/Repos/Tamagotchi/src/backend/Tamagotchi.Backend.Pet.Api/Tamagotchi.Backend.Pet.Api.csproj": {
+    "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.Pet.Api\\Tamagotchi.Backend.Pet.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/steve/Repos/Tamagotchi/src/backend/Tamagotchi.Backend.Pet.Api/Tamagotchi.Backend.Pet.Api.csproj",
+        "projectUniqueName": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.Pet.Api\\Tamagotchi.Backend.Pet.Api.csproj",
         "projectName": "Tamagotchi.Backend.Pet.Api",
-        "projectPath": "/Users/steve/Repos/Tamagotchi/src/backend/Tamagotchi.Backend.Pet.Api/Tamagotchi.Backend.Pet.Api.csproj",
-        "packagesPath": "/Users/steve/.nuget/packages/",
-        "outputPath": "/Users/steve/Repos/Tamagotchi/src/backend/Tamagotchi.Backend.Pet.Api/obj/",
+        "projectPath": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.Pet.Api\\Tamagotchi.Backend.Pet.Api.csproj",
+        "packagesPath": "C:\\Users\\steve\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.Pet.Api\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/Users/steve/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\steve\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -38,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -46,7 +53,7 @@
           "dependencies": {
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[9.0.0, )"
+              "version": "[9.0.2, )"
             }
           },
           "imports": [
@@ -68,7 +75,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

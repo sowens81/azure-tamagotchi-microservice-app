@@ -7,10 +7,8 @@ using Microsoft.Azure.Cosmos;
 
 namespace Tamagotchi.Backend.SharedLibrary.Entities;
 
-public class Pet
+public class Pet : CosmosBaseEntity
 {
-    public string Id { get; set; } // Pet ID (could be GUID)
-
     public string Name { get; set; } // Pet name
 
     public string AnimalType { get; set; } // One of 8 animals (e.g., Cat, Dog, etc.)

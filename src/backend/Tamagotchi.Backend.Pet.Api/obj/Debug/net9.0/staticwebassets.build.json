@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "LrKJp7mv4GBbbji7jPdSbgIUuXqBJe0gqJlDcGHJEcE=",
+  "Source": "Tamagotchi.Backend.Pet.Api",
+  "BasePath": "_content/Tamagotchi.Backend.Pet.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

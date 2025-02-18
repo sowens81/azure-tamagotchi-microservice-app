@@ -1,19 +1,21 @@
 
+using Tamagotchi.Backend.SharedLibrary.Dto;
+
 namespace Tamagotchi.Backend.User.Api.Service;
 
 public interface IUserService
 {
-    Task<string UserId> RegisterUserAsync(UserRegistrationDto userRegistrationObject);
-    Task<UserDto> GetUserByIdAsync(string userId);
+    Task<UserRegistrationResponseDto> RegisterUserAsync(UserRegistrationRequestDto userRegistrationObject);
+    Task<UserResponseDto> GetUserByIdAsync(string userId);
 
-    Task<IEnumerable<UserDto>> GetAllUsersAsync();
+    Task<IEnumerable<UserResponseDto>> GetAllUsersAsync();
 
-    Task<UserDto> GetUserByUsernameAsync(string username);
+    Task<UserResponseDto> GetUserByUsernameAsync(string username);
 
-    Task<UserDto> GetUserByEmailAsync(string email);
+    Task<UserResponseDto> GetUserByEmailAsync(string email);
 
     Task<bool> DeleteUserByIdAsync(string userId);
 
-    Task<UserDto> UpdateUserAsync(UserUpdateDto userUpdateObject);
+    Task<UserResponseDto> UpdateUserAsync(UserUpdateRequestDto userUpdateObject);
 
 }

@@ -1,17 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
+using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 
 namespace Tamagotchi.Backend.SharedLibrary.Entities;
 
-public class User
+public class User : CosmosBaseEntity
 {
-    public string Id { get; set; } // User ID (could be GUID or username)
+    [Required]
+    [JsonProperty(PropertyName = "username")]
+    public required string Username { get; set; }
 
-    public string Name { get; set; }
-    public string Email { get; set; }
+    [Required]
+    [EmailAddress]
+    [JsonProperty(PropertyName = "email")]
+    public required string Email { get; set; }
 
-    public List<Pet> Pets { get; set; } // List of pets the user owns
+    [Required]
+    [JsonProperty(PropertyName = "passwordHash")]
+    public required string PasswordHash { get; set; }
+
+    [Required]
+    [JsonProperty(PropertyName = "firstName")]
+    public required string FirstName { get; set; }
+    
+    [Required]
+    [JsonProperty(PropertyName = "lastName")]
+    public required string LastName { get; set; }
+
+    [JsonProperty(PropertyName = "createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    [JsonProperty(PropertyName = "updatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
 }

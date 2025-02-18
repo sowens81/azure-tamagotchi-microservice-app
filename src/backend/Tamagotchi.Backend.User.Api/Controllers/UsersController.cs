@@ -2,7 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Tamagotchi.Backend.SharedLibrary.Dto;
+using NewUser = Tamagotchi.Backend.SharedLibrary.Entities.User;
+using Tamagotchi.Backend.User.Api.Service;
+using Tamagotchi.Backend.SharedLibrary.Security;
 
 namespace Tamagotchi.Backend.User.Api.Controllers;
 
@@ -11,16 +16,18 @@ namespace Tamagotchi.Backend.User.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, IPasswordHasher passwordHasher)
     {
         _userService = userService;
+        _passwordHasher = passwordHasher;
     }
 
     [HttpPost]
     [Route("api/users/register")]
     public async Task<IActionResult> RegisterUser(
-        [FromBody] UserRegistrationDto userRegistrationDto
+        [FromBody] UserRegistrationRequestDto userRegistrationDto
     )
     {
         if (!ModelState.IsValid)
@@ -28,18 +35,17 @@ public class UsersController : ControllerBase
             return BadRequest(ModelState); // Return validation errors if the model is invalid
         }
 
-        var user = new User
+        var newUser = new NewUser
         {
             Username = userRegistrationDto.Username,
             Email = userRegistrationDto.Email,
             PasswordHash = _passwordHasher.HashPassword(userRegistrationDto.Password),
-            FullName = userRegistrationDto.FullName,
-            DateOfBirth = userRegistrationDto.DateOfBirth,
-            PhoneNumber = userRegistrationDto.PhoneNumber,
+            FirstName = userRegistrationDto.FirstName,
+            LastName = userRegistrationDto.LastName,
         };
 
         // Save the user to the database, send confirmation email, etc.
-        await _userService.RegisterUserAsync(user);
+        await _userService.RegisterUserAsync(newUser);
 
         return Ok(new { message = "User registered successfully." });
     }
@@ -112,26 +118,25 @@ public class UsersController : ControllerBase
             return NotFound(new { message = "User not found" });
         }
 
-        var userReturnDto = new UserReturnDto
+        var userResponseDto = new UserResponseDto
         {
             UserId = user.UserId,
             Username = user.Username,
-            FullName = user.FullName,
             Email = user.Email,
-            PhoneNumber = user.PhoneNumber,
-            DateOfBirth = user.DateOfBirth,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
         };
 
-        return Ok(userReturnDto);
+        return Ok(userResponseDto);
     }
 
     [HttpPut]
     [Route("api/users/{userId}")]
     public async Task<IActionResult> UpdateUser(
         string userId,
-        [FromBody] UserUpdateDto userUpdateDto
+        [FromBody] UserUpdateRequestDto userUpdateDto
     )
     {
         if (!ModelState.IsValid)
@@ -139,7 +144,7 @@ public class UsersController : ControllerBase
             return BadRequest(ModelState); // Return validation errors if the model is invalid
         }
 
-        var user = await _userService.GetUserAsync(userId);
+        var user = await _userService.GetUserByIdAsync(userId);
         if (user == null)
         {
             return NotFound(new { message = "User not found" });
@@ -177,7 +182,8 @@ public class UsersController : ControllerBase
         return Ok(new { message = "User updated successfully" });
     }
 
-    HttpPatch("{userId}")]
+    [HttpPatch]
+    [Route("api/users/{userId}")]
     public async Task<IActionResult> PatchUser(string userId, [FromBody] JsonPatchDocument<User> patchDoc)
     {
         if (patchDoc == null)
