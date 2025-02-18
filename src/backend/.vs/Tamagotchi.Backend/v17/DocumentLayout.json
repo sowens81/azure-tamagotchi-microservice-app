@@ -1,12 +1,71 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E1D8B525-0652-4720-88E8-ADECB9846893}|Tamagotchi.Backend.User.Api\\Tamagotchi.Backend.User.Api.csproj|c:\\users\\steve\\repos\\azure-tamagotchi-microservice-app\\src\\backend\\tamagotchi.backend.user.api\\repository\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1D8B525-0652-4720-88E8-ADECB9846893}|Tamagotchi.Backend.User.Api\\Tamagotchi.Backend.User.Api.csproj|solutionrelative:tamagotchi.backend.user.api\\repository\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E1D8B525-0652-4720-88E8-ADECB9846893}|Tamagotchi.Backend.User.Api\\Tamagotchi.Backend.User.Api.csproj|c:\\users\\steve\\repos\\azure-tamagotchi-microservice-app\\src\\backend\\tamagotchi.backend.user.api\\repository\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E1D8B525-0652-4720-88E8-ADECB9846893}|Tamagotchi.Backend.User.Api\\Tamagotchi.Backend.User.Api.csproj|solutionrelative:tamagotchi.backend.user.api\\repository\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{ECBAC36A-1AD5-46AE-BA0B-A91E76820EA9}|Tamagotchi.Backend.SharedLibrary\\Tamagotchi.Backend.SharedLibrary.csproj|c:\\users\\steve\\repos\\azure-tamagotchi-microservice-app\\src\\backend\\tamagotchi.backend.sharedlibrary\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ECBAC36A-1AD5-46AE-BA0B-A91E76820EA9}|Tamagotchi.Backend.SharedLibrary\\Tamagotchi.Backend.SharedLibrary.csproj|solutionrelative:tamagotchi.backend.sharedlibrary\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.SharedLibrary\\Entities\\User.cs",
+              "RelativeDocumentMoniker": "Tamagotchi.Backend.SharedLibrary\\Entities\\User.cs",
+              "ToolTip": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.SharedLibrary\\Entities\\User.cs",
+              "RelativeToolTip": "Tamagotchi.Backend.SharedLibrary\\Entities\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-18T20:17:24.603Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "UserRepository.cs",
+              "DocumentMoniker": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.User.Api\\Repository\\UserRepository.cs",
+              "RelativeDocumentMoniker": "Tamagotchi.Backend.User.Api\\Repository\\UserRepository.cs",
+              "ToolTip": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.User.Api\\Repository\\UserRepository.cs",
+              "RelativeToolTip": "Tamagotchi.Backend.User.Api\\Repository\\UserRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-18T20:16:28.233Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "IUserRepository.cs",
+              "DocumentMoniker": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.User.Api\\Repository\\IUserRepository.cs",
+              "RelativeDocumentMoniker": "Tamagotchi.Backend.User.Api\\Repository\\IUserRepository.cs",
+              "ToolTip": "C:\\Users\\steve\\Repos\\azure-tamagotchi-microservice-app\\src\\backend\\Tamagotchi.Backend.User.Api\\Repository\\IUserRepository.cs",
+              "RelativeToolTip": "Tamagotchi.Backend.User.Api\\Repository\\IUserRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-18T20:16:24.651Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

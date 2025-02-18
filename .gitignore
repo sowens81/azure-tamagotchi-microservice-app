@@ -1,0 +1,108 @@
+# .gitignore for Azure DevOps Projects
+
+# Ignore user-specific files
+*.log
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Ignore temporary files
+*.tmp
+*.temp
+*.obj
+*.pch
+*.idb
+*.pdb
+*.ilk
+*.tlog
+*.vspscc
+*.vssscc
+
+# Ignore build outputs
+bin/
+bin
+build/
+build
+Debug/
+Debug
+Release/
+Release
+TestResults
+TestResults/
+x64/
+x86/
+out/
+obj/
+obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.app
+*.ipa
+*.apk
+*.manifest
+*.spec
+
+# Ignore IDEs and editor files
+.vscode/
+.idea/
+.vs/
+*.code-workspace
+
+# Ignore sensitive files
+.env
+*.key
+*.pem
+*.crt
+*.pfx
+*.cer
+*.cert
+
+# Ignore logs and reports
+*.log
+*.log.*
+*.trace
+*.dmp
+*.mdmp
+*.stackdump
+
+# Ignore Terraform sensitive files
+*.tfvars
+.terraform/
+crash.log
+
+# Ignore PowerShell sensitive files
+*.ps1xml
+*.psc1
+*.psd1
+
+# Kubernetes sensitive files
+*.kubeconfig
+
+# Helm sensitive files
+*.tgz
+
+# Python-sensitive files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Node.js-sensitive files
+npm-debug.log*
+yarn-error.log
+
+# Ignore Bash-sensitive files
+*.bash_history
+
+# SQL backups and sensitive files
+*.mdf
+*.ldf
+*.bak
+node_modules
