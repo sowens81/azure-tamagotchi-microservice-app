@@ -1,0 +1,6 @@
+@Tamagotchi.Backend.User.Api_HostAddress = http://localhost:5248
+
+GET {{Tamagotchi.Backend.User.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "9DIxuzvkEqx5aRQbUqyVsiJthwEW65yphqXhC/EVG54=",
+  "Source": "Tamagotchi.Backend.Api",
+  "BasePath": "_content/Tamagotchi.Backend.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
