@@ -3,6 +3,7 @@ using System.Net;
 using Tamagotchi.Backend.SharedLibrary.Entities;
 using Tamagotchi.Backend.SharedLibrary.Factories;
 using Tamagotchi.Backend.SharedLibrary.Logging;
+using Tamagotchi.Backend.SharedLibrary.Utilities;
 
 namespace Tamagotchi.Backend.SharedLibrary.Repositories;
 
@@ -151,11 +152,13 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T> where T : CosmosBase
         return results.FirstOrDefault();
     }
 
-    public async Task AddAsync(T entity, string transactionId)
+    public async Task<T> AddAsync(T entity, string transactionId)
     {
         try
         {
-            await _container.CreateItemAsync(entity);
+            entity.UserId = IdGenerator.GenerateShortId();
+            var response = await _container.CreateItemAsync(entity);
+            return response;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
         {

@@ -6,6 +6,9 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.vs
+/.vs
+.vs
 
 # Ignore temporary files
 *.tmp

@@ -1,7 +1,7 @@
 ﻿using Tamagotchi.Backend.SharedLibrary.Repositories;
-using UserEntity = Tamagotchi.Backend.SharedLibrary.Entities.User;
+using Tamagotchi.Backend.User.Api.Entities;
 
-namespace Tamagotchi.Backend.User.Api.Repository;
+namespace Tamagotchi.Backend.User.Api.Repositories;
 
 public interface IUserRepository : IDatabaseRepository<UserEntity>
 {

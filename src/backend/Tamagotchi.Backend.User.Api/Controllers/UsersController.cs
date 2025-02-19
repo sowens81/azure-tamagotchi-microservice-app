@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Tamagotchi.Backend.SharedLibrary.Dto;
-using NewUser = Tamagotchi.Backend.SharedLibrary.Entities.User;
-using Tamagotchi.Backend.User.Api.Service;
 using Tamagotchi.Backend.SharedLibrary.Security;
+using Tamagotchi.Backend.User.Api.Entities;
+using Tamagotchi.Backend.User.Api.Services;
 
 namespace Tamagotchi.Backend.User.Api.Controllers;
 
@@ -30,24 +26,14 @@ public class UsersController : ControllerBase
         [FromBody] UserRegistrationRequestDto userRegistrationDto
     )
     {
+        var transactionId = SetTransactionId(HttpContext.Items["TransactionId"]?.ToString());
+
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState); // Return validation errors if the model is invalid
         }
 
-        var newUser = new NewUser
-        {
-            Username = userRegistrationDto.Username,
-            Email = userRegistrationDto.Email,
-            PasswordHash = _passwordHasher.HashPassword(userRegistrationDto.Password),
-            FirstName = userRegistrationDto.FirstName,
-            LastName = userRegistrationDto.LastName,
-        };
-
-        // Save the user to the database, send confirmation email, etc.
-        await _userService.RegisterUserAsync(newUser);
-
-        return Ok(new { message = "User registered successfully." });
+        return await _userService.CreateUserAsync(userRegistrationDto, transactionId);
     }
 
     [HttpGet]
@@ -184,7 +170,10 @@ public class UsersController : ControllerBase
 
     [HttpPatch]
     [Route("api/users/{userId}")]
-    public async Task<IActionResult> PatchUser(string userId, [FromBody] JsonPatchDocument<User> patchDoc)
+    public async Task<IActionResult> PatchUser(
+        string userId,
+        [FromBody] JsonPatchDocument<User> patchDoc
+    )
     {
         if (patchDoc == null)
         {
@@ -219,7 +208,7 @@ public class UsersController : ControllerBase
     {
         // Check if the user exists
         var user = await _userService.GetUserByIdAsync(userId);
-        
+
         if (user == null)
         {
             // If the user doesn't exist, return 404 Not Found
@@ -228,7 +217,7 @@ public class UsersController : ControllerBase
 
         // Call service to delete the user
         var result = await _userService.DeleteUserAsync(userId);
-        
+
         if (result)
         {
             // If deletion was successful, return 204 No Content (no body)
@@ -239,4 +228,8 @@ public class UsersController : ControllerBase
         return StatusCode(500, new { message = "An error occurred while deleting the user." });
     }
 
+    public string SetTransactionId(string? transactionId)
+    {
+        return transactionId ?? Guid.NewGuid().ToString();
+    }
 }

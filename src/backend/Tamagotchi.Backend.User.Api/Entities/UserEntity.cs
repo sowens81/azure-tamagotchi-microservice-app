@@ -1,9 +1,10 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
+using Tamagotchi.Backend.SharedLibrary.Entities;
 
-namespace Tamagotchi.Backend.SharedLibrary.Entities;
+namespace Tamagotchi.Backend.User.Api.Entities;
 
-public class User : CosmosBaseEntity
+public class UserEntity : CosmosBaseEntity
 {
     [Required]
     [JsonProperty(PropertyName = "username")]
@@ -21,7 +22,7 @@ public class User : CosmosBaseEntity
     [Required]
     [JsonProperty(PropertyName = "firstName")]
     public required string FirstName { get; set; }
-    
+
     [Required]
     [JsonProperty(PropertyName = "lastName")]
     public required string LastName { get; set; }

@@ -17,7 +17,7 @@ public interface IDatabaseRepository<T>
         IDictionary<string, object> parameters,
         string transactionId
     );
-    Task AddAsync(T entity, string transactionId);
+    Task<T> AddAsync(T entity, string transactionId);
     Task UpdateAsync(string id, string partitionKey, T entity, string transactionId);
     Task DeleteAsync(string id, string partitionKey, string transactionId);
     Task UpdateByFieldAsync(
