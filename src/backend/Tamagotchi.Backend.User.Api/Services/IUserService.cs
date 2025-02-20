@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Mvc;
 using Tamagotchi.Backend.User.Api.Dtos;
 
@@ -6,7 +5,10 @@ namespace Tamagotchi.Backend.User.Api.Services;
 
 public interface IUserService
 {
-    Task<IActionResult> CreateUserAsync(UserRegistrationRequestDto userRegistrationObject, string transactionId);
+    Task<IActionResult> CreateUserAsync(
+        UserRegistrationRequestDto userRegistrationObject,
+        string transactionId
+    );
     Task<IActionResult> GetUserByIdAsync(string userId, string transactionId);
 
     Task<IActionResult> GetAllUsersAsync(string transactionId);
@@ -17,6 +19,9 @@ public interface IUserService
 
     Task<IActionResult> DeleteUserByIdAsync(string userId, string transactionId);
 
-    Task<IActionResult> UpdateUserAsync(UserUpdateRequestDto userUpdateObject, string transactionId);
-
+    Task<IActionResult> UpdateUserAsync(
+        string userId,
+        UserUpdateRequestDto userUpdateObject,
+        string transactionId
+    );
 }

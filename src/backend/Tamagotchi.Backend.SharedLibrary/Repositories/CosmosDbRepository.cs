@@ -365,7 +365,10 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            _log.LogWarning($"Rate limit exceeded while updating item with ID {id}.", transactionId);
+            _log.LogWarning(
+                $"Rate limit exceeded while updating item with ID {id}.",
+                transactionId
+            );
 
             var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
 

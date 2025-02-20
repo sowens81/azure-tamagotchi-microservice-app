@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using Tamagotchi.Backend.SharedLibrary.Entities;
 
 namespace Tamagotchi.Backend.User.Api.Entities;
@@ -32,5 +32,4 @@ public class UserEntity : CosmosBaseEntity
 
     [JsonProperty(PropertyName = "updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
-
 }
