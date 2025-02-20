@@ -8,6 +8,6 @@ namespace Tamagotchi.Backend.SharedLibrary.Models;
 public class PetStatusUpdateMessage
 {
     public string PetId { get; set; }
-    public string Action { get; set; }  // "feed", "exercise", "clean", "checkHealth"
+    public string Action { get; set; }
     public DateTime ActionTimestamp { get; set; }
 }

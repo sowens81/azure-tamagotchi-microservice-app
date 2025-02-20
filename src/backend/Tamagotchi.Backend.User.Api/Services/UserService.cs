@@ -1,10 +1,11 @@
+using System.Web.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System.Web.Mvc;
 using Tamagotchi.Backend.SharedLibrary.Dto;
 using Tamagotchi.Backend.SharedLibrary.Factories;
 using Tamagotchi.Backend.SharedLibrary.Logging;
+using Tamagotchi.Backend.SharedLibrary.Models;
 using Tamagotchi.Backend.SharedLibrary.Security;
 using Tamagotchi.Backend.User.Api.Entities;
 using Tamagotchi.Backend.User.Api.Repositories;
@@ -29,25 +30,42 @@ public class UserService : IUserService
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _log = logger;
-
     }
 
-    public async Task<IActionResult> CreateUserAsync(UserRegistrationRequestDto userRegistrationObject, string transactionId)
+    public async Task<IActionResult> CreateUserAsync(
+        UserRegistrationRequestDto userRegistrationObject,
+        string transactionId
+    )
     {
-        var validateUsername = await _userRepository.GetUserByUsernameAsync(userRegistrationObject.Username, transactionId);
+        var validateUsername = await _userRepository.GetUserByUsernameAsync(
+            userRegistrationObject.Username,
+            transactionId
+        );
         if (null != validateUsername)
         {
-            _log.LogWarning($"User Registation Request: User account for username {userRegistrationObject.Username} already exists", transactionId);
-            return new BadRequestObjectResult(new { message = "Bad Request, Username already registered." });
+            _log.LogWarning(
+                $"User Registration Request: User account for username {userRegistrationObject.Username} already exists",
+                transactionId
+            );
+            return new BadRequestObjectResult(
+                new ApiFailureResponse() { Success = false, Message = "Bad Request, Username already registered.", ErrorCode = "NURUE001" }
+            );
         }
 
-        var validateEmail = await _userRepository.GetUserByUsernameAsync(userRegistrationObject.Username, transactionId);
+        var validateEmail = await _userRepository.GetUserByUsernameAsync(
+            userRegistrationObject.Username,
+            transactionId
+        );
         if (null != validateEmail)
         {
-            _log.LogWarning($"User Registation Request: User account for email address {userRegistrationObject.Email} already exists", transactionId);
-            return new BadRequestObjectResult(new { message = "Bad Request, Email address already registered." });
+            _log.LogWarning(
+                $"User Registration Request: User account for email address {userRegistrationObject.Email} already exists",
+                transactionId
+            );
+            return new BadRequestObjectResult(
+                new ApiFailureResponse() { Success = false, Message = "Bad Request, Email address already registered.", ErrorCode = "NUREE0001"}
+            );
         }
-
 
         var userEntity = new UserEntity
         {
@@ -66,11 +84,14 @@ public class UserService : IUserService
             Message = "Successfully registered new user.",
             UserId = addUserResponse.UserId,
             Username = addUserResponse.Username,
-            CreatedAt = addUserResponse.CreatedAt
+            CreatedAt = addUserResponse.CreatedAt,
         };
 
-        _log.LogInformation($"User Registation Request: User account created for {userRegistrationObject.Username}", transactionId);
-        return new OkObjectResult(userRegistrationResponse);
+        _log.LogInformation(
+            $"User Registration Request: User account created for {userRegistrationObject.Username}",
+            transactionId
+        );
+        return new OkObjectResult(new ApiSuccessResponse() { Success = true, Message = "Bad Request, Email address already registered.", Metadata = userRegistrationResponse);
     }
 
     public async Task<bool> DeleteUserByIdAsync(string userId)
