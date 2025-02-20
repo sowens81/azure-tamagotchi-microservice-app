@@ -25,40 +25,11 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
         _log = logger;
     }
 
-    public async Task<CosmosDbResponse<T>> GetOneByIdAsync(string id, string partitionKey, string transactionId)
+    public async Task<CosmosDbResponse<List<T>>> GetAllAsync(string transactionId)
     {
         try
         {
-            _log.LogInformation($"Item with ID {id} found.", transactionId);
-            var entityResponse = await _container.ReadItemAsync<T>(id, new PartitionKey(partitionKey));
-
-            var response = new CosmosDbResponse<T>() { IsSuccess = true, Entity = entityResponse };
-
-            return response;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            _log.LogInformation($"Item with ID {id} not found.", transactionId);
-
-            var response = new CosmosDbResponse<T>() { IsSuccess = true, Entity = null };
-
-            return response;
-        }
-        catch (Exception ex)
-        {
-            _log.LogError(ex, $"Error occurred while fetching item with ID {id}.", transactionId);
-
-            var response = new CosmosDbResponse<T>() { IsSuccess = false, Entity = null, Message = $"Error occurred while fetching item with ID {id}: {ex.Message}", Exception = ex  };
-
-            return response;
-        }
-    }
-
-    public async Task<IEnumerable<T>> GetAllAsync(string transactionId)
-    {
-        try
-        {
-            // Define a default query to fetch all items
+            _log.LogInformation($"Fetching all items from Cosmos DB.", transactionId);
             var queryIterator = _container.GetItemQueryIterator<T>(
                 new QueryDefinition("SELECT * FROM c")
             );
@@ -66,138 +37,364 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
 
             while (queryIterator.HasMoreResults)
             {
-                var response = await queryIterator.ReadNextAsync();
-                results.AddRange(response.ToList());
-            }
-            if (results.Count == 0)
-            {
-                _log.LogInformation($"No items found.", transactionId);
-                return results;
+                FeedResponse<T> response = await queryIterator.ReadNextAsync();
+                results.AddRange(response);
             }
 
-            _log.LogInformation($"Items found.", transactionId);
-            return results;
+            _log.LogInformation($"Fetched {results.Count} items from Cosmos DB.", transactionId);
+            return new CosmosDbResponse<List<T>>
+            {
+                IsSuccess = true,
+                Entity = results,
+                ResponseCode = 200,
+            };
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _log.LogWarning($"Rate limit exceeded while fetching all items.", transactionId);
+
+            var errorResponse = new CosmosDbResponse<List<T>>()
+            {
+                IsSuccess = false,
+                ResponseCode = 429,
+            };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex)
+        {
+            _log.LogError(ex, $"Cosmos DB error fetching all items: {ex.Message}", transactionId);
+            var errorResponse = new CosmosDbResponse<List<T>>()
+            {
+                IsSuccess = false,
+                ResponseCode = 500,
+                Exception = ex,
+            };
+            return errorResponse;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, "Error occurred while fetching all items.", transactionId);
-            throw;
+            _log.LogError(ex, $"Error fetching all items: {ex.Message}", transactionId);
+            return new CosmosDbResponse<List<T>>
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
         }
     }
 
-    public async Task<IEnumerable<T>> QueryAsync(
-        string query,
-        IDictionary<string, object> parameters,
+    public async Task<CosmosDbResponse<T>> GetOneByIdAsync(
+        string id,
+        string partitionKey,
         string transactionId
     )
     {
         try
         {
-            var queryDefinition = new QueryDefinition(query);
+            _log.LogInformation($"Item with ID {id} found.", transactionId);
+            var entityResponse = await _container.ReadItemAsync<T>(
+                id,
+                new PartitionKey(partitionKey)
+            );
 
-            // Add parameters to the query
-            foreach (var parameter in parameters)
+            var response = new CosmosDbResponse<T>() { IsSuccess = true, Entity = entityResponse };
+            return response;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _log.LogInformation($"Item with ID {id} not found.", transactionId);
+
+            var response = new CosmosDbResponse<T>()
             {
-                queryDefinition.WithParameter(parameter.Key, parameter.Value);
-            }
+                IsSuccess = true,
+                Entity = null,
+                ResponseCode = 404,
+            };
+            return response;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _log.LogWarning($"Rate limit exceeded while getting item with ID {id}.", transactionId);
 
-            var queryIterator = _container.GetItemQueryIterator<T>(queryDefinition);
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
 
-            var results = new List<T>();
-            while (queryIterator.HasMoreResults)
-            {
-                try
-                {
-                    var response = await queryIterator.ReadNextAsync();
-                    results.AddRange(response);
-                }
-                catch (CosmosException ex)
-                    when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
-                {
-                    _log.LogWarning(
-                        $"Query exceeded entity size limit. Query: {query}",
-                        transactionId
-                    );
-                    throw; // Re-throw to allow calling code to handle appropriately
-                }
-            }
-
-            if (results.Count == 0)
-            {
-                _log.LogInformation($"No items found.", transactionId);
-                return results;
-            }
-            _log.LogInformation($"Items found.", transactionId);
-            return results;
+            return errorResponse;
         }
         catch (CosmosException ex)
         {
             _log.LogError(
                 ex,
-                $"Cosmos DB error occurred while executing query: {query}",
+                $"Cosmos DB error while fetching item with ID {id}: {ex.Message}",
                 transactionId
             );
-            throw; // Re-throw to allow calling code to handle appropriately
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                ResponseCode = 500,
+                Exception = ex,
+            };
+            return errorResponse;
         }
         catch (Exception ex)
         {
             _log.LogError(
                 ex,
-                $"An unexpected error occurred while executing query: {query}",
+                $"Error occurred while fetching item with ID {id}: {ex.Message}",
                 transactionId
             );
-            throw;
+
+            var response = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                Entity = null,
+                Exception = ex,
+            };
+
+            return response;
         }
     }
 
-    public async Task<T?> QueryFirstOrDefaultAsync(
+    public async Task<CosmosDbResponse<List<T>>> QueryAsync(
         string query,
         IDictionary<string, object> parameters,
         string transactionId
     )
     {
-        // Reuse your existing method to get all matching results
-        var results = await QueryAsync(query, parameters, transactionId);
+        try
+        {
+            _log.LogInformation($"Executing query: {query}", transactionId);
+            var queryDefinition = new QueryDefinition(query);
+            foreach (var param in parameters)
+            {
+                queryDefinition.WithParameter(param.Key, param.Value);
+            }
 
-        // Return only the first record or null if none
-        return results.FirstOrDefault();
+            var queryIterator = _container.GetItemQueryIterator<T>(queryDefinition);
+            var results = new List<T>();
+
+            while (queryIterator.HasMoreResults)
+            {
+                FeedResponse<T> response = await queryIterator.ReadNextAsync();
+                results.AddRange(response);
+            }
+
+            _log.LogInformation($"Query executed. Retrieved {results.Count} items.", transactionId);
+            return new CosmosDbResponse<List<T>>
+            {
+                IsSuccess = true,
+                Entity = results,
+                ResponseCode = 200,
+            };
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _log.LogWarning($"Rate limit exceeded while fetching all items.", transactionId);
+
+            var errorResponse = new CosmosDbResponse<List<T>>()
+            {
+                IsSuccess = false,
+                ResponseCode = 429,
+            };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex)
+        {
+            _log.LogError(
+                ex,
+                $"Cosmos DB error while executing query: {ex.Message}",
+                transactionId
+            );
+            var errorResponse = new CosmosDbResponse<List<T>>()
+            {
+                IsSuccess = false,
+                ResponseCode = 500,
+                Exception = ex,
+            };
+            return errorResponse;
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, $"Error executing query.", transactionId);
+            return new CosmosDbResponse<List<T>>
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
+        }
     }
 
-    public async Task<T> AddAsync(T entity, string transactionId)
+    public async Task<CosmosDbResponse<T>> QueryOneAsync(
+        string query,
+        IDictionary<string, object> parameters,
+        string transactionId
+    )
     {
         try
         {
-            entity.UserId = IdGenerator.GenerateShortId();
+            _log.LogInformation($"Executing query: {query}", transactionId);
+            var queryDefinition = new QueryDefinition(query);
+            foreach (var param in parameters)
+            {
+                queryDefinition.WithParameter(param.Key, param.Value);
+            }
+
+            var queryIterator = _container.GetItemQueryIterator<T>(queryDefinition);
+            var results = new List<T>();
+
+            while (queryIterator.HasMoreResults)
+            {
+                FeedResponse<T> response = await queryIterator.ReadNextAsync();
+                results.AddRange(response);
+            }
+
+            _log.LogInformation($"Query executed. Retrieved {results.Count} items.", transactionId);
+            return new CosmosDbResponse<T>
+            {
+                IsSuccess = true,
+                Entity = results.FirstOrDefault(),
+                ResponseCode = 200,
+            };
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _log.LogWarning($"Rate limit exceeded while executing query.", transactionId);
+
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex)
+        {
+            _log.LogError(
+                ex,
+                $"Cosmos DB error while executing query: {ex.Message}",
+                transactionId
+            );
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                ResponseCode = 500,
+                Exception = ex,
+            };
+            return errorResponse;
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, $"Error executing query.", transactionId);
+            return new CosmosDbResponse<T>
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
+        }
+    }
+
+    public async Task<CosmosDbResponse<T>> AddAsync(T entity, string transactionId)
+    {
+        try
+        {
+            _log.LogInformation($"Adding new item.", transactionId);
             var response = await _container.CreateItemAsync(entity);
-            return response;
+            _log.LogInformation($"Item added successfully.", transactionId);
+
+            return new CosmosDbResponse<T>
+            {
+                IsSuccess = true,
+                Entity = response.Resource,
+                ResponseCode = 201,
+            };
         }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            _log.LogWarning($"Item already exists.", transactionId);
-            throw;
+            _log.LogWarning($"Rate limit exceeded while adding item.", transactionId);
+
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex)
+        {
+            _log.LogError(ex, $"Cosmos DB error while adding item.: {ex.Message}", transactionId);
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
+            return errorResponse;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, $"Error occurred while adding item.", transactionId);
-            throw;
+            _log.LogError(ex, $"Error adding item.", transactionId);
+            return new CosmosDbResponse<T>
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
         }
     }
 
-    public async Task UpdateAsync(string id, string partitionKey, T entity, string transactionId)
+    public async Task<CosmosDbResponse<T>> UpdateAsync(
+        string id,
+        string partitionKey,
+        T entity,
+        string transactionId
+    )
     {
         try
         {
-            await _container.ReplaceItemAsync(entity, id, new PartitionKey(partitionKey));
+            _log.LogInformation($"Updating item with ID {id}.", transactionId);
+            var response = await _container.ReplaceItemAsync(
+                entity,
+                id,
+                new PartitionKey(partitionKey)
+            );
+            _log.LogInformation($"Item updated successfully.", transactionId);
+
+            return new CosmosDbResponse<T>
+            {
+                IsSuccess = true,
+                Entity = response.Resource,
+                ResponseCode = 200,
+            };
         }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            _log.LogWarning($"Item with ID {id} not found for update.", transactionId);
-            throw;
+            _log.LogWarning($"Rate limit exceeded while updating item with ID {id}.", transactionId);
+
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex)
+        {
+            _log.LogError(
+                ex,
+                $"Cosmos DB error while updating item with ID {id}: {ex.Message}",
+                transactionId
+            );
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
+            return errorResponse;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, $"Error occurred while updating item.", transactionId);
-            throw;
+            _log.LogError(ex, $"Error updating item with ID {id}.", transactionId);
+            return new CosmosDbResponse<T>
+            {
+                IsSuccess = false,
+                Exception = ex,
+                ResponseCode = 500,
+            };
         }
     }
 
@@ -209,39 +406,19 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
     {
         try
         {
-            var deleteResponse = await _container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey));
-            if (deleteResponse.StatusCode == System.Net.HttpStatusCode.NoContent)
-            {
-                var response = new CosmosDbResponse<T>() { IsSuccess = true, Message = $"Item with ID {id} sucessfully deleted." };
-                return response;
-            }
-
-            _log.LogWarning(
-                $"Unexpected response from Cosmos DB while delete item with ID {id}.",
-                transactionId
+            var deleteResponse = await _container.DeleteItemAsync<T>(
+                id,
+                new PartitionKey(partitionKey)
             );
 
-            var errorResponse = new CosmosDbResponse<T>()
-            {
-                IsSuccess = false,
-                Message = $"Unexpected response from Cosmos DB while delete item with ID {id}."
-            };
-
-            return errorResponse;
-
+            var response = new CosmosDbResponse<T>() { IsSuccess = true, ResponseCode = 204 };
+            return response;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            _log.LogWarning(
-                $"Item with ID {id} not found for deletion.", 
-                transactionId
-            );
+            _log.LogWarning($"Item with ID {id} not found for deletion.", transactionId);
 
-            var errorResponse = new CosmosDbResponse<T>()
-            {
-                IsSuccess = false,
-                Message = $"Item with ID {id} not found for deletion.",
-            };
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = true, ResponseCode = 404 };
 
             return errorResponse;
         }
@@ -252,11 +429,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
                 transactionId
             );
 
-            var errorResponse = new CosmosDbResponse<T>()
-            {
-                IsSuccess = false,
-                Message = $"Rate limit exceeded while deleting item with ID {id}.",
-            };
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
 
             return errorResponse;
         }
@@ -267,151 +440,25 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
                 $"Cosmos DB error while deleting item with ID {id}: {ex.Message}",
                 transactionId
             );
-
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _log.LogError(
-                ex, 
-                $"Error occurred while fetching items: {ex.Message}", 
-                transactionId
-            );
-
-            throw;
-        }
-    }
-
-    public async Task UpdateByFieldAsync(
-        string fieldName,
-        object fieldValue,
-        string partitionKey,
-        T updatedEntity,
-        string transactionId
-    )
-    {
-        try
-        {
-            // Query for the existing entity by the field
-            var query =
-                $"SELECT * FROM c WHERE c.{fieldName} = @FieldValue AND c.partitionKey = @PartitionKey";
-            var parameters = new Dictionary<string, object>
+            var errorResponse = new CosmosDbResponse<T>()
             {
-                { "@FieldValue", fieldValue },
-                { "@PartitionKey", partitionKey },
+                IsSuccess = false,
+                ResponseCode = 500,
+                Exception = ex,
             };
-
-            var existingEntities = await QueryAsync(query, parameters, transactionId);
-
-            var entityToUpdate = existingEntities.FirstOrDefault();
-            if (entityToUpdate == null)
-            {
-                _log.LogWarning(
-                    $"No entity found with {fieldName} = {fieldValue} in partition {partitionKey}.",
-                    transactionId
-                );
-                return;
-            }
-
-            // Extract the id from the existing entity (assuming entities have an 'id' property)
-            var idProperty = typeof(T).GetProperty("id");
-            if (idProperty == null)
-            {
-                throw new InvalidOperationException("Entity does not contain an 'id' property.");
-            }
-
-            var id = idProperty.GetValue(entityToUpdate)?.ToString();
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new InvalidOperationException("Entity 'id' is null or empty.");
-            }
-
-            // Perform the update
-            await UpdateAsync(id, partitionKey, updatedEntity, transactionId);
-        }
-        catch (CosmosException ex)
-        {
-            _log.LogError(
-                ex,
-                $"Cosmos DB error occurred while updating entity with {fieldName} = {fieldValue}.",
-                transactionId
-            );
-            throw;
+            return errorResponse;
         }
         catch (Exception ex)
         {
-            _log.LogError(
-                ex,
-                $"An unexpected error occurred while updating entity with {fieldName} = {fieldValue}.",
-                transactionId
-            );
-            throw;
-        }
-    }
+            _log.LogError(ex, $"Error occurred while fetching items: {ex.Message}", transactionId);
 
-    public async Task DeleteByFieldAsync(
-        string fieldName,
-        object fieldValue,
-        string partitionKey,
-        string transactionId
-    )
-    {
-        try
-        {
-            // Query for the entity by the field
-            var query =
-                $"SELECT * FROM c WHERE c.{fieldName} = @FieldValue AND c.partitionKey = @PartitionKey";
-            var parameters = new Dictionary<string, object>
+            var errorResponse = new CosmosDbResponse<T>()
             {
-                { "@FieldValue", fieldValue },
-                { "@PartitionKey", partitionKey },
+                IsSuccess = false,
+                ResponseCode = 500,
+                Exception = ex,
             };
-
-            var existingEntities = await QueryAsync(query, parameters, transactionId);
-
-            var entityToDelete = existingEntities.FirstOrDefault();
-            if (entityToDelete == null)
-            {
-                _log.LogWarning(
-                    $"No entity found with {fieldName} = {fieldValue} in partition {partitionKey}.",
-                    transactionId
-                );
-                return;
-            }
-
-            // Extract the id from the existing entity (assuming entities have an 'id' property)
-            var idProperty = typeof(T).GetProperty("id");
-            if (idProperty == null)
-            {
-                throw new InvalidOperationException("Entity does not contain an 'id' property.");
-            }
-
-            var id = idProperty.GetValue(entityToDelete)?.ToString();
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new InvalidOperationException("Entity 'id' is null or empty.");
-            }
-
-            // Perform the deletion
-            await DeleteAsync(id, partitionKey, transactionId);
-        }
-        catch (CosmosException ex)
-        {
-            _log.LogError(
-                ex,
-                $"Cosmos DB error occurred while deleting entity with {fieldName} = {fieldValue}.",
-                transactionId
-            );
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _log.LogError(
-                ex,
-                $"An unexpected error occurred while deleting entity with {fieldName} = {fieldValue}.",
-                transactionId
-            );
-            throw;
+            return errorResponse;
         }
     }
 }

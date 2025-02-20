@@ -1,5 +1,6 @@
 ﻿using Tamagotchi.Backend.SharedLibrary.Factories;
 using Tamagotchi.Backend.SharedLibrary.Logging;
+using Tamagotchi.Backend.SharedLibrary.Models;
 using Tamagotchi.Backend.SharedLibrary.Repositories;
 using Tamagotchi.Backend.User.Api.Entities;
 
@@ -9,51 +10,50 @@ public class UserRepository : CosmosDbRepository<UserEntity>, IUserRepository
 {
     private readonly ISuperLogger<CosmosDbRepository<UserEntity>> _log;
 
-    public UserRepository(ICosmosDbFactory cosmosDbFactory, ISuperLogger<CosmosDbRepository<UserEntity>> logger) : base(cosmosDbFactory, logger)
+    public UserRepository(
+        ICosmosDbFactory cosmosDbFactory,
+        ISuperLogger<CosmosDbRepository<UserEntity>> logger
+    )
+        : base(cosmosDbFactory, logger)
     {
         _log = logger;
     }
 
-    public async Task<UserEntity?> GetUserByEmailAsync(string email, string transactionId)
+    public async Task<CosmosDbResponse<UserEntity?>> GetUserByEmailAsync(
+        string email,
+        string transactionId
+    )
     {
-        try
-        {
-            var query = "SELECT * FROM c WHERE c.email = @Email";
-            var parameters = new Dictionary<string, object> { { "@Email", email } };
+        var query = "SELECT * FROM c WHERE c.email = @Email";
+        var parameters = new Dictionary<string, object> { { "@Email", email } };
 
-            var users = await QueryAsync(query, parameters, transactionId);
-            return users.FirstOrDefault();
-        }
-        catch (Exception ex)
+        var userResponse = await QueryOneAsync(query, parameters, transactionId);
+        var user = userResponse;
+        return new CosmosDbResponse<UserEntity?>
         {
-            _log.LogError(
-                ex,
-                $"Error occurred while fetching user with email {email}.",
-                transactionId
-            );
-            throw;
-        }
+            IsSuccess = userResponse.IsSuccess,
+            Entity = userResponse.Entity,
+            ResponseCode = userResponse.ResponseCode,
+            Exception = userResponse.Exception,
+        };
     }
 
-    public async Task<UserEntity?> GetUserByUsernameAsync(string username, string transactionId)
+    public async Task<CosmosDbResponse<UserEntity?>> GetUserByUsernameAsync(
+        string username,
+        string transactionId
+    )
     {
+        var query = "SELECT * FROM c WHERE c.username = @Username";
+        var parameters = new Dictionary<string, object> { { "@Username", username } };
 
-        try
+        var userResponse = await QueryOneAsync(query, parameters, transactionId);
+        var user = userResponse;
+        return new CosmosDbResponse<UserEntity?>
         {
-            var query = "SELECT * FROM c WHERE c.username = @Username";
-            var parameters = new Dictionary<string, object> { { "@Username", username } };
-
-            var users = await QueryAsync(query, parameters, transactionId);
-            return users.FirstOrDefault();
-        }
-        catch (Exception ex)
-        {
-            _log.LogError(
-                ex,
-                $"Error occurred while fetching user with username {username}.",
-                transactionId
-            );
-            throw;
-        }
+            IsSuccess = userResponse.IsSuccess,
+            Entity = userResponse.Entity,
+            ResponseCode = userResponse.ResponseCode,
+            Exception = userResponse.Exception,
+        };
     }
 }
