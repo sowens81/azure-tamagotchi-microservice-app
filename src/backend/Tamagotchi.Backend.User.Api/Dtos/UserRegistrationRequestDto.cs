@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Tamagotchi.Backend.SharedLibrary.Dto;
+namespace Tamagotchi.Backend.User.Api.Dtos;
 
 public class UserRegistrationRequestDto
 {

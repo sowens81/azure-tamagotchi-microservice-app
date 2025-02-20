@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Tamagotchi.Backend.SharedLibrary.Dto;
+using Swashbuckle.AspNetCore.Annotations;
+using Tamagotchi.Backend.SharedLibrary.Models;
 using Tamagotchi.Backend.SharedLibrary.Security;
-using Tamagotchi.Backend.User.Api.Entities;
+using Tamagotchi.Backend.User.Api.Dtos;
 using Tamagotchi.Backend.User.Api.Services;
 
 namespace Tamagotchi.Backend.User.Api.Controllers;
@@ -20,20 +21,40 @@ public class UsersController : ControllerBase
         _passwordHasher = passwordHasher;
     }
 
-    [HttpPost]
-    [Route("api/users/register")]
+    /// <summary>
+    /// Registers a new user in the system.
+    /// </summary>
+    /// <param name="userRegistrationRequest">The user registration details.</param>
+    /// <returns>Returns the created user details or an error response.</returns>
+    /// <response code="201">User successfully registered</response>
+    /// <response code="400">Invalid request payload</response>
+    /// <response code="409">User already exists</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("register")]
+    [Consumes("application/json")]
+    [Produces("application/json")]
+    [SwaggerOperation(
+        Summary = "Registers a new user",
+        Description = "Registers a user with the provided details if the username and email are unique.",
+        OperationId = "RegisterUser",
+        Tags = new[] { "User Management" }
+    )]
+    [ProducesResponseType(typeof(ApiSuccessResponse<UserRegistrationResponseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RegisterUser(
-        [FromBody] UserRegistrationRequestDto userRegistrationDto
+        [FromBody] UserRegistrationRequestDto userRegistrationRequest
     )
     {
-        var transactionId = SetTransactionId(HttpContext.Items["TransactionId"]?.ToString());
+        var transactionId = HttpContext.Items["TransactionId"]?.ToString() ?? Guid.NewGuid().ToString();
 
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState); // Return validation errors if the model is invalid
         }
 
-        return await _userService.CreateUserAsync(userRegistrationDto, transactionId);
+        return await _userService.CreateUserAsync(userRegistrationRequest, transactionId);
     }
 
     [HttpGet]
@@ -226,10 +247,5 @@ public class UsersController : ControllerBase
 
         // If there was an issue deleting (e.g., due to permissions), return 500 Internal Server Error
         return StatusCode(500, new { message = "An error occurred while deleting the user." });
-    }
-
-    public string SetTransactionId(string? transactionId)
-    {
-        return transactionId ?? Guid.NewGuid().ToString();
     }
 }

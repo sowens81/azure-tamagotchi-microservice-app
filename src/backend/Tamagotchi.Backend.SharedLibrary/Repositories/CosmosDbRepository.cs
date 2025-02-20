@@ -1,13 +1,17 @@
-﻿using Microsoft.Azure.Cosmos;
-using System.Net;
+﻿using System.Net;
+using Azure;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Azure.Cosmos;
 using Tamagotchi.Backend.SharedLibrary.Entities;
 using Tamagotchi.Backend.SharedLibrary.Factories;
 using Tamagotchi.Backend.SharedLibrary.Logging;
+using Tamagotchi.Backend.SharedLibrary.Models;
 using Tamagotchi.Backend.SharedLibrary.Utilities;
 
 namespace Tamagotchi.Backend.SharedLibrary.Repositories;
 
-public class CosmosDbRepository<T> : IDatabaseRepository<T> where T : CosmosBaseEntity
+public class CosmosDbRepository<T> : IDatabaseRepository<T>
+    where T : CosmosBaseEntity
 {
     private readonly Container _container;
     private readonly ISuperLogger<CosmosDbRepository<T>> _log;
@@ -21,23 +25,32 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T> where T : CosmosBase
         _log = logger;
     }
 
-    public async Task<T?> GetOneByIdAsync(string id, string partitionKey, string transactionId)
+    public async Task<CosmosDbResponse<T>> GetOneByIdAsync(string id, string partitionKey, string transactionId)
     {
         try
         {
             _log.LogInformation($"Item with ID {id} found.", transactionId);
-            var response = await _container.ReadItemAsync<T>(id, new PartitionKey(partitionKey));
-            return response.Resource;
+            var entityResponse = await _container.ReadItemAsync<T>(id, new PartitionKey(partitionKey));
+
+            var response = new CosmosDbResponse<T>() { IsSuccess = true, Entity = entityResponse };
+
+            return response;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             _log.LogInformation($"Item with ID {id} not found.", transactionId);
-            return null;
+
+            var response = new CosmosDbResponse<T>() { IsSuccess = true, Entity = null };
+
+            return response;
         }
         catch (Exception ex)
         {
             _log.LogError(ex, $"Error occurred while fetching item with ID {id}.", transactionId);
-            throw;
+
+            var response = new CosmosDbResponse<T>() { IsSuccess = false, Entity = null, Message = $"Error occurred while fetching item with ID {id}: {ex.Message}", Exception = ex  };
+
+            return response;
         }
     }
 
@@ -64,8 +77,6 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T> where T : CosmosBase
 
             _log.LogInformation($"Items found.", transactionId);
             return results;
-
-
         }
         catch (Exception ex)
         {
@@ -190,19 +201,83 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T> where T : CosmosBase
         }
     }
 
-    public async Task DeleteAsync(string id, string partitionKey, string transactionId)
+    public async Task<CosmosDbResponse<T>> DeleteAsync(
+        string id,
+        string partitionKey,
+        string transactionId
+    )
     {
         try
         {
-            await _container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey));
+            var deleteResponse = await _container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey));
+            if (deleteResponse.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                var response = new CosmosDbResponse<T>() { IsSuccess = true, Message = $"Item with ID {id} sucessfully deleted." };
+                return response;
+            }
+
+            _log.LogWarning(
+                $"Unexpected response from Cosmos DB while delete item with ID {id}.",
+                transactionId
+            );
+
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                Message = $"Unexpected response from Cosmos DB while delete item with ID {id}."
+            };
+
+            return errorResponse;
+
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            _log.LogWarning($"Item with ID {id} not found for deletion.", transactionId);
+            _log.LogWarning(
+                $"Item with ID {id} not found for deletion.", 
+                transactionId
+            );
+
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                Message = $"Item with ID {id} not found for deletion.",
+            };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _log.LogWarning(
+                $"Rate limit exceeded while deleting item with ID {id}.",
+                transactionId
+            );
+
+            var errorResponse = new CosmosDbResponse<T>()
+            {
+                IsSuccess = false,
+                Message = $"Rate limit exceeded while deleting item with ID {id}.",
+            };
+
+            return errorResponse;
+        }
+        catch (CosmosException ex)
+        {
+            _log.LogError(
+                ex,
+                $"Cosmos DB error while deleting item with ID {id}: {ex.Message}",
+                transactionId
+            );
+
+            throw;
         }
         catch (Exception ex)
         {
-            _log.LogError(ex, $"Error occurred while fetching items.", transactionId);
+            _log.LogError(
+                ex, 
+                $"Error occurred while fetching items: {ex.Message}", 
+                transactionId
+            );
+
             throw;
         }
     }
