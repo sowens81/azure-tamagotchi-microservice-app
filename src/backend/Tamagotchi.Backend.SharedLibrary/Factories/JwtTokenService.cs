@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Tamagotchi.Backend.SharedLibrary.Settings;
 
 namespace Tamagotchi.Backend.SharedLibrary.Factories;
 

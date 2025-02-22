@@ -56,6 +56,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
             var errorResponse = new CosmosDbResponse<List<T>>()
             {
                 IsSuccess = false,
+                Exception = ex,
                 ResponseCode = 429,
             };
 
@@ -98,7 +99,10 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
                 new PartitionKey(partitionKey)
             );
 
-            var response = new CosmosDbResponse<T>() { IsSuccess = true, Entity = entityResponse };
+            var response = new CosmosDbResponse<T>() { 
+                IsSuccess = true, 
+                ResponseCode = 200,
+                Entity = entityResponse };
             return response;
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -107,8 +111,8 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
 
             var response = new CosmosDbResponse<T>()
             {
-                IsSuccess = true,
-                Entity = null,
+                IsSuccess = false,
+                Exception = ex,
                 ResponseCode = 404,
             };
             return response;
@@ -148,6 +152,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
             {
                 IsSuccess = false,
                 Entity = null,
+                ResponseCode = 500,
                 Exception = ex,
             };
 
@@ -195,6 +200,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
             {
                 IsSuccess = false,
                 ResponseCode = 429,
+                Exception = ex,
             };
 
             return errorResponse;
@@ -250,7 +256,17 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
                 results.AddRange(response);
             }
 
-            _log.LogInformation($"Query executed. Retrieved {results.Count} items.", transactionId);
+            if (results.FirstOrDefault() == null)
+            {
+                _log.LogInformation($"Query executed. Item not found.", transactionId);
+                return new CosmosDbResponse<T>
+                {
+                    IsSuccess = false,
+                    ResponseCode = 404
+                };
+            }
+
+            _log.LogInformation($"Query executed. Retrieved item.", transactionId);
             return new CosmosDbResponse<T>
             {
                 IsSuccess = true,
@@ -312,7 +328,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
         {
             _log.LogWarning($"Rate limit exceeded while adding item.", transactionId);
 
-            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, Exception = ex, ResponseCode = 429 };
 
             return errorResponse;
         }
@@ -370,7 +386,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
                 transactionId
             );
 
-            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, Exception = ex, ResponseCode = 429 };
 
             return errorResponse;
         }
@@ -421,7 +437,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
         {
             _log.LogWarning($"Item with ID {id} not found for deletion.", transactionId);
 
-            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = true, ResponseCode = 404 };
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, Exception = ex, ResponseCode = 404 };
 
             return errorResponse;
         }
@@ -432,7 +448,7 @@ public class CosmosDbRepository<T> : IDatabaseRepository<T>
                 transactionId
             );
 
-            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, ResponseCode = 429 };
+            var errorResponse = new CosmosDbResponse<T>() { IsSuccess = false, Exception = ex, ResponseCode = 429 };
 
             return errorResponse;
         }

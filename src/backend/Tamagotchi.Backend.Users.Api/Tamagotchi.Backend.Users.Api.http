@@ -1,0 +1,46 @@
+@Tamagotchi.Backend.User.Api_HostAddress = http://localhost:7003
+
+### Get all users
+GET {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users/all
+Accept: application/json
+
+### Get user by email
+GET {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users?email=test@example.com
+Accept: application/json
+
+### Get user by username
+GET {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users/username?username=testuser
+Accept: application/json
+
+### Get user by ID
+GET {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users/12345
+Accept: application/json
+
+### Register a new user
+POST {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "password": "securepassword",
+  "ConfirmPassword": "securepassword",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+### Update user
+PUT {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users/12345
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "updateduser@example.com",
+  "firstName": "UpdatedFirstName",
+  "lastName": "UpdatedLastName"
+}
+
+### Delete user
+DELETE {{Tamagotchi.Backend.User.Api_HostAddress}}/api/users/12345
+Accept: application/json
