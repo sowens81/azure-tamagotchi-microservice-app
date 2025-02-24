@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Tamagotchi.Backend.SharedLibrary.Extensions;
 using Tamagotchi.Backend.SharedLibrary.Factories;
 using Tamagotchi.Backend.SharedLibrary.Filters;
@@ -10,6 +12,8 @@ using Tamagotchi.Backend.Users.Api.Services;
 using Tamagotchi.Backend.Users.Api.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var serviceName = "Tamagotchi.Backend.Users.Api";
 
 if (builder.Environment.IsDevelopment())
 {
@@ -30,7 +34,11 @@ var appConfigVars = config.GetSection("KEYVAULT");
 
 string GetConfigValue(string envVar, string appSettingKey)
 {
-    return Environment.GetEnvironmentVariable(envVar) ?? appConfigVars[appSettingKey] ?? throw new InvalidOperationException($"Configuration value for {envVar} or {appSettingKey} is not set.");
+    return Environment.GetEnvironmentVariable(envVar)
+        ?? appConfigVars[appSettingKey]
+        ?? throw new InvalidOperationException(
+            $"Configuration value for {envVar} or {appSettingKey} is not set."
+        );
 }
 
 var keyVaultName = GetConfigValue("KEYVAULT_NAME", "NAME");
@@ -47,11 +55,32 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Include health check routes in Swagger documentation
+    options.DocInclusionPredicate(
+        (docName, apiDesc) =>
+        {
+            if (apiDesc.RelativePath.Contains("healthz"))
+            {
+                return true; // Include health check endpoints in the Swagger UI
+            }
+
+            return true; // Make sure all other endpoints are included as well
+        }
+    );
+
+    // Optional: Customize API info, add authentication, etc.
+    options.SwaggerDoc(
+        "v1",
+        new Microsoft.OpenApi.Models.OpenApiInfo { Title = serviceName, Version = "v1" }
+    );
+});
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddTelemetry(
-    serviceName: "Tamagotchi.Backend.Users.Api",
+    serviceName: serviceName,
     environmentName: builder.Environment.EnvironmentName,
     enableRequestResponseMiddleware: true
 );
@@ -79,11 +108,15 @@ builder.Services.Configure<JwtSettings>(options =>
 
 builder.Services.AddJwtAuthentication();
 
-builder.Services.AddSingleton<CosmosDbFactory>(sp =>
+// Register CosmosDbFactory for dependency injection
+builder.Services.AddSingleton<ICosmosDbFactory>(sp =>
 {
     var cosmosEndpoint = GetConfigValue("KEYVAULT_SEC_COSMOS_ENDPOINT", "SEC_COSMOS_ENDPOINT");
     var cosmosDatabaseName = GetConfigValue("KEYVAULT_SEC_COSMOS_DATABASE", "SEC_COSMOS_DATABASE");
-    var cosmosContainerName = GetConfigValue("KEYVAULT_SEC_COSMOS_CONTAINER", "SEC_COSMOS_CONTAINER");
+    var cosmosContainerName = GetConfigValue(
+        "KEYVAULT_SEC_COSMOS_CONTAINER",
+        "SEC_COSMOS_CONTAINER"
+    );
     var cosmosDbFactory = new CosmosDbFactory(
         KeyVaultFactory.GetSecret(builder.Configuration, cosmosEndpoint),
         KeyVaultFactory.GetSecret(builder.Configuration, cosmosDatabaseName),
@@ -92,9 +125,15 @@ builder.Services.AddSingleton<CosmosDbFactory>(sp =>
     return cosmosDbFactory;
 });
 
+// Add health check services
+builder
+    .Services.AddHealthChecks()
+    .AddCheck("API", () => HealthCheckResult.Healthy("API is running"))
+    .AddCheck<CosmosDbHealthCheckExtension>("CosmosDB", tags: new[] { "ready" }); // Use AddCheck here
+
 // Register dependencies
-builder.Services.AddScoped<IUserService, UserService>(); // Scoped instance per request
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // Repository should also be scoped
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthenticationValidationService, AuthenticationValidationService>();
@@ -102,6 +141,7 @@ builder.Services.AddScoped<IDtoMapper, DtoMapper>();
 
 var app = builder.Build();
 
+// Middleware for logging and security
 app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseCors("AllowAllOrigins");
 app.UseSwagger();
@@ -109,4 +149,12 @@ app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Map the health check endpoints
+app.MapHealthChecks("api/healthz/live", new HealthCheckOptions { Predicate = _ => false });
+app.MapHealthChecks(
+    "api/healthz/ready",
+    new HealthCheckOptions { Predicate = r => r.Tags.Contains("ready") }
+);
+
 app.Run();

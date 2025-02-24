@@ -16,17 +16,30 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
         _client = fixture.Client; // Get the shared HttpClient instance
     }
 
-    private string RandomGuid(int lenght)
+    private string RandomGuid(int length)
     {
-        return $"{Guid.NewGuid().ToString("N").Substring(0, lenght)}";
+        return $"{Guid.NewGuid().ToString("N").Substring(0, length)}";
     }
 
-    // [Fact]
-    // public async Task HealthCheck_ShouldReturn_Ok()
-    // {
-    //     var response = await _client.GetAsync("/health");
-    //     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    // }
+    [Fact]
+    public async Task Live_HealthCheck_ShouldReturn_Ok()
+    {
+        var liveHealthCheckResponse = await _client.GetAsync("/api/healthz/live");
+        Assert.True(
+            liveHealthCheckResponse.StatusCode == HttpStatusCode.OK,
+            $"Live Healthz endpoint return 200 OK, but got {liveHealthCheckResponse.StatusCode.ToString()}"
+        );
+    }
+
+    [Fact]
+    public async Task Ready_HealthCheck_ShouldReturn_Ok()
+    {
+        var readyHealthCheckResponse = await _client.GetAsync("/api/healthz/ready");
+        Assert.True(
+            readyHealthCheckResponse.StatusCode == HttpStatusCode.OK,
+            $"Ready Healthz endpoint return 200 OK, but got {readyHealthCheckResponse.StatusCode.ToString()}"
+        );
+    }
 
     [Fact]
     public async Task Validate_RegisterUser_Endpoint_Bad_Request_Functionality()
@@ -128,39 +141,47 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
             LastName = "user{randomString}",
         };
 
-        var registerUserResponse = await _client.PostAsJsonAsync(
-            "api/users/register", 
-            user
-        );
+        var registerUserResponse = await _client.PostAsJsonAsync("api/users/register", user);
 
         Assert.True(
             registerUserResponse.StatusCode == HttpStatusCode.Created,
-            "Valid user registration should return 201 Created"
+            $"Valid user registration should return 201 Created, but got {registerUserResponse.StatusCode.ToString()}"
         );
 
-        var registerUserResponseContent = await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var registerUserResponseContent =
+            await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
 
-        
-        Assert.True(registerUserResponseContent.TryGetProperty("data", out var rurcData),
-        "Response should contain 'data' after successful registration");
+        Assert.True(
+            registerUserResponseContent.TryGetProperty("data", out var rurcData),
+            "Response should contain 'data' after successful registration"
+        );
 
-        Assert.True(rurcData.TryGetProperty("userId", out var rurcDataUserId) && null != rurcDataUserId.GetString(),
-        "Response should contain 'data.userId' after successful registration");
+        Assert.True(
+            rurcData.TryGetProperty("userId", out var rurcDataUserId)
+                && null != rurcDataUserId.GetString(),
+            "Response should contain 'data.userId' after successful registration"
+        );
 
-        Assert.True(rurcData.TryGetProperty("username", out var rurcDataUserName) && rurcDataUserName.GetString() ==  user.Username,
-        "Response should contain 'data.username' after successful registration");
+        Assert.True(
+            rurcData.TryGetProperty("username", out var rurcDataUserName)
+                && rurcDataUserName.GetString() == user.Username,
+            "Response should contain 'data.username' after successful registration"
+        );
 
-        Assert.True(rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
-        "Response should contain 'data.createdAt' after successful registration");
+        Assert.True(
+            rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
+            "Response should contain 'data.createdAt' after successful registration"
+        );
 
         // Delete User Request
-        var deleteUserResponse = await _client.DeleteAsync($"api/users/{rurcDataUserId.GetString()}");
+        var deleteUserResponse = await _client.DeleteAsync(
+            $"api/users/{rurcDataUserId.GetString()}"
+        );
 
         Assert.True(
             deleteUserResponse.StatusCode == HttpStatusCode.Accepted,
             $"DeleteUserById should return status code 202 when user id {rurcDataUserId.GetString()} is deleted, but Returned: {deleteUserResponse.StatusCode.ToString()}"
         );
-
     }
 
     [Fact]
@@ -194,19 +215,30 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
                 "Valid user registration should return 201 Created"
             );
 
-            var registerUserResponseContent = await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
+            var registerUserResponseContent =
+                await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
 
-            Assert.True(registerUserResponseContent.TryGetProperty("data", out var rurcData),
-            "Response should contain 'data' after successful registration");
+            Assert.True(
+                registerUserResponseContent.TryGetProperty("data", out var rurcData),
+                "Response should contain 'data' after successful registration"
+            );
 
-            Assert.True(rurcData.TryGetProperty("userId", out var rurcDataUserId) && null != rurcDataUserId.GetString(),
-            "Response should contain 'data.userId' after successful registration");
+            Assert.True(
+                rurcData.TryGetProperty("userId", out var rurcDataUserId)
+                    && null != rurcDataUserId.GetString(),
+                "Response should contain 'data.userId' after successful registration"
+            );
 
-            Assert.True(rurcData.TryGetProperty("username", out var rurcDataUserName) && rurcDataUserName.GetString() == registerUser.Username,
-            "Response should contain 'data.username' after successful registration");
+            Assert.True(
+                rurcData.TryGetProperty("username", out var rurcDataUserName)
+                    && rurcDataUserName.GetString() == registerUser.Username,
+                "Response should contain 'data.username' after successful registration"
+            );
 
-            Assert.True(rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
-            "Response should contain 'data.createdAt' after successful registration");
+            Assert.True(
+                rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
+                "Response should contain 'data.createdAt' after successful registration"
+            );
 
             var registeredUser = new RegisteredUser()
             {
@@ -226,10 +258,11 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
             "GetAllUsers should return status code 200 when list of any number of users returned."
         );
 
-        var getAllUsersResponseContent = await getAllUsersResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var getAllUsersResponseContent =
+            await getAllUsersResponse.Content.ReadFromJsonAsync<JsonElement>();
 
-        Assert.True(getAllUsersResponseContent.TryGetProperty(
-            "data", out var gaurcData),
+        Assert.True(
+            getAllUsersResponseContent.TryGetProperty("data", out var gaurcData),
             "Response should contain 'data' after successful registration"
         );
 
@@ -238,12 +271,13 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
             $"Response should contain {registeredUsers.Count} but contains {gaurcData.GetArrayLength()}"
         );
 
-
         // Delete All Users Request
         foreach (RegisteredUser registeredUser in registeredUsers)
         {
             // Delete User Request
-            var deleteUserResponse = await _client.DeleteAsync($"api/users/{registeredUser.UserId}");
+            var deleteUserResponse = await _client.DeleteAsync(
+                $"api/users/{registeredUser.UserId}"
+            );
 
             Assert.True(
                 deleteUserResponse.StatusCode == HttpStatusCode.Accepted,
@@ -252,11 +286,73 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
         }
     }
 
-    //[Fact]
-    //public async Task Validate_GetUser_Endpoint_Good_Request_Functionality()
-    //{
+    [Fact]
+    public async Task Validate_GetUser_Endpoint_Good_Request_Functionality()
+    {
+        // Register User Request
+        var randomString = RandomGuid(8);
+        var randomPassword = RandomGuid(15);
+        var user = new
+        {
+            Username = $"testuser{randomString}",
+            Email = $"testuser{randomString}@example.com",
+            Password = randomPassword,
+            ConfirmPassword = randomPassword,
+            FirstName = "test",
+            LastName = "user{randomString}",
+        };
 
-    //}
+        var registerUserResponse = await _client.PostAsJsonAsync("api/users/register", user);
+
+        Assert.True(
+            registerUserResponse.StatusCode == HttpStatusCode.Created,
+            $"Valid user registration should return 201 Created, but got {registerUserResponse.StatusCode.ToString()}"
+        );
+
+        var registerUserResponseContent =
+            await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.True(
+            registerUserResponseContent.TryGetProperty("data", out var rurcData),
+            "Response should contain 'data' after successful registration"
+        );
+
+        Assert.True(
+            rurcData.TryGetProperty("userId", out var rurcDataUserId)
+                && null != rurcDataUserId.GetString(),
+            "Response should contain 'data.userId' after successful registration"
+        );
+
+        Assert.True(
+            rurcData.TryGetProperty("username", out var rurcDataUserName)
+                && rurcDataUserName.GetString() == user.Username,
+            "Response should contain 'data.username' after successful registration"
+        );
+
+        Assert.True(
+            rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
+            "Response should contain 'data.createdAt' after successful registration"
+        );
+
+        //Get User Request
+
+        var getUsersResponse = await _client.GetAsync($"api/users/{rurcDataUserId.GetString()}");
+
+        Assert.True(
+            getUsersResponse.StatusCode == HttpStatusCode.OK,
+            $"GetUserById should return status code 200 when users returned, but returned {getUsersResponse.StatusCode.ToString()}"
+        );
+
+        // Delete User Request
+        var deleteUserResponse = await _client.DeleteAsync(
+            $"api/users/{rurcDataUserId.GetString()}"
+        );
+
+        Assert.True(
+            deleteUserResponse.StatusCode == HttpStatusCode.Accepted,
+            $"DeleteUserById should return status code 202 when user id {rurcDataUserId.GetString()} is deleted, but Returned: {deleteUserResponse.StatusCode.ToString()}"
+        );
+    }
 
     //[Fact]
     //public async Task Validate_GetUserByEmail_Endpoint_Good_Request_Functionality()
@@ -270,18 +366,92 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
 
     //}
 
-    //[Fact]
-    //public async Task Validate_UpdateUser_Endpoint_Good_Request_Functionality()
-    //{
+    [Fact]
+    public async Task Validate_UpdateUser_Endpoint_Good_Request_Functionality()
+    {
+        // Register User Request
+        var randomString = RandomGuid(8);
+        var randomPassword = RandomGuid(15);
+        var user = new
+        {
+            Username = $"testuser{randomString}",
+            Email = $"testuser{randomString}@example.com",
+            Password = randomPassword,
+            ConfirmPassword = randomPassword,
+            FirstName = "test",
+            LastName = "user{randomString}",
+        };
 
-    //}
+        var registerUserResponse = await _client.PostAsJsonAsync("api/users/register", user);
+
+        Assert.True(
+            registerUserResponse.StatusCode == HttpStatusCode.Created,
+            $"Valid user registration should return 201 Created, but got {registerUserResponse.StatusCode.ToString()}"
+        );
+
+        var registerUserResponseContent =
+            await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.True(
+            registerUserResponseContent.TryGetProperty("data", out var rurcData),
+            "Response should contain 'data' after successful registration"
+        );
+
+        Assert.True(
+            rurcData.TryGetProperty("userId", out var rurcDataUserId)
+                && null != rurcDataUserId.GetString(),
+            "Response should contain 'data.userId' after successful registration"
+        );
+
+        Assert.True(
+            rurcData.TryGetProperty("username", out var rurcDataUserName)
+                && rurcDataUserName.GetString() == user.Username,
+            "Response should contain 'data.username' after successful registration"
+        );
+
+        Assert.True(
+            rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
+            "Response should contain 'data.createdAt' after successful registration"
+        );
+
+        //Update User Request
+        var userUpdate = new
+        {
+            Username = $"updateduser{randomString}",
+            FirstName = "updated",
+            LastName = "updateduser{randomString}",
+        };
+
+        var userUpdateJson = JsonContent.Create(userUpdate);
+
+        // Perform the PUT request with the user update data
+        var updateUserResponse = await _client.PutAsync(
+            $"api/users/{rurcDataUserId.GetString()}",
+            userUpdateJson
+        );
+
+        Assert.True(
+            updateUserResponse.StatusCode == HttpStatusCode.OK,
+            $"UpdateUserById should return status code 200 when user id {rurcDataUserId.GetString()} is updated, but Returned: {updateUserResponse.StatusCode.ToString()}"
+        );
+
+        // Delete User Request
+        var deleteUserResponse = await _client.DeleteAsync(
+            $"api/users/{rurcDataUserId.GetString()}"
+        );
+
+        Assert.True(
+            deleteUserResponse.StatusCode == HttpStatusCode.Accepted,
+            $"DeleteUserById should return status code 202 when user id {rurcDataUserId.GetString()} is deleted, but Returned: {deleteUserResponse.StatusCode.ToString()}"
+        );
+    }
 
     [Fact]
     public async Task Validate_DeleteUser_Endpoint_Bad_Request_Functionality()
     {
         // Delete User Request
         var fakeUserId = "FAKE12345";
-        
+
         var deleteUserResponse = await _client.DeleteAsync($"api/users/{fakeUserId}");
 
         Assert.True(
@@ -306,33 +476,42 @@ public class UsersApiTests : IClassFixture<HttpClientFixture>
             LastName = "user{randomString}",
         };
 
-        var registerUserResponse = await _client.PostAsJsonAsync(
-            "api/users/register",
-            user
-        );
+        var registerUserResponse = await _client.PostAsJsonAsync("api/users/register", user);
 
         Assert.True(
             registerUserResponse.StatusCode == HttpStatusCode.Created,
             "Valid user registration should return 201 Created"
         );
 
-        var registerUserResponseContent = await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var registerUserResponseContent =
+            await registerUserResponse.Content.ReadFromJsonAsync<JsonElement>();
 
+        Assert.True(
+            registerUserResponseContent.TryGetProperty("data", out var rurcData),
+            "Response should contain 'data' after successful registration"
+        );
 
-        Assert.True(registerUserResponseContent.TryGetProperty("data", out var rurcData),
-        "Response should contain 'data' after successful registration");
+        Assert.True(
+            rurcData.TryGetProperty("userId", out var rurcDataUserId)
+                && null != rurcDataUserId.GetString(),
+            "Response should contain 'data.userId' after successful registration"
+        );
 
-        Assert.True(rurcData.TryGetProperty("userId", out var rurcDataUserId) && null != rurcDataUserId.GetString(),
-        "Response should contain 'data.userId' after successful registration");
+        Assert.True(
+            rurcData.TryGetProperty("username", out var rurcDataUserName)
+                && rurcDataUserName.GetString() == user.Username,
+            "Response should contain 'data.username' after successful registration"
+        );
 
-        Assert.True(rurcData.TryGetProperty("username", out var rurcDataUserName) && rurcDataUserName.GetString() == user.Username,
-        "Response should contain 'data.username' after successful registration");
-
-        Assert.True(rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
-        "Response should contain 'data.createdAt' after successful registration");
+        Assert.True(
+            rurcData.TryGetProperty("createdAt", out var rurcCreatedAt),
+            "Response should contain 'data.createdAt' after successful registration"
+        );
 
         // Delete User Request
-        var deleteUserResponse = await _client.DeleteAsync($"api/users/{rurcDataUserId.GetString()}");
+        var deleteUserResponse = await _client.DeleteAsync(
+            $"api/users/{rurcDataUserId.GetString()}"
+        );
 
         Assert.True(
             deleteUserResponse.StatusCode == HttpStatusCode.Accepted,

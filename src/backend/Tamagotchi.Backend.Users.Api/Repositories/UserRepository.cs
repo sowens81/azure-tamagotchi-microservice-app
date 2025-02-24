@@ -11,7 +11,7 @@ public class UserRepository : CosmosDbRepository<UserEntity>, IUserRepository
     private readonly ISuperLogger<CosmosDbRepository<UserEntity>> _log;
 
     public UserRepository(
-        CosmosDbFactory cosmosDbFactory,
+        ICosmosDbFactory cosmosDbFactory,
         ISuperLogger<CosmosDbRepository<UserEntity>> logger
     )
         : base(cosmosDbFactory, logger)
