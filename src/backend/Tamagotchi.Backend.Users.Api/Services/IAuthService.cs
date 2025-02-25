@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Tamagotchi.Backend.Users.Api.Dtos;
 
 namespace Tamagotchi.Backend.Users.Api.Services;
 
-public interface IAuthenticationValidationService
+public interface IAuthService
 {
+    Task<IActionResult> AuthenticateUserAsync(AuthenticationRequestDto authenticationRequest, string transactionId);
+
     IActionResult? ValidationUserEmailAuth(
         string email,
         ClaimsPrincipal user,

@@ -4,11 +4,13 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Tamagotchi.Backend.SharedLibrary.Extensions;
 using Tamagotchi.Backend.SharedLibrary.Factories;
 using Tamagotchi.Backend.SharedLibrary.Filters;
+using Tamagotchi.Backend.SharedLibrary.Logging;
 using Tamagotchi.Backend.SharedLibrary.Middleware;
 using Tamagotchi.Backend.SharedLibrary.Security;
 using Tamagotchi.Backend.SharedLibrary.Settings;
 using Tamagotchi.Backend.Users.Api.Repositories;
 using Tamagotchi.Backend.Users.Api.Services;
+using Tamagotchi.Backend.Users.Api.Swagger;
 using Tamagotchi.Backend.Users.Api.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -75,6 +77,7 @@ builder.Services.AddSwaggerGen(options =>
         "v1",
         new Microsoft.OpenApi.Models.OpenApiInfo { Title = serviceName, Version = "v1" }
     );
+    options.SchemaFilter<CustomSchemaFilter>();
 });
 
 builder.Services.AddOpenApi();
@@ -108,7 +111,15 @@ builder.Services.Configure<JwtSettings>(options =>
 
 builder.Services.AddJwtAuthentication();
 
-// Register CosmosDbFactory for dependency injection
+builder
+    .Services.AddHealthChecks()
+    .AddCheck("API", () => HealthCheckResult.Healthy("API is running"))
+    .AddCheck<CosmosDbHealthCheckExtension>("CosmosDB", tags: new[] { "ready" }); // Use AddCheck here
+
+// Register dependencies
+
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<ICosmosDbFactory>(sp =>
 {
     var cosmosEndpoint = GetConfigValue("KEYVAULT_SEC_COSMOS_ENDPOINT", "SEC_COSMOS_ENDPOINT");
@@ -124,19 +135,25 @@ builder.Services.AddSingleton<ICosmosDbFactory>(sp =>
     );
     return cosmosDbFactory;
 });
-
-// Add health check services
-builder
-    .Services.AddHealthChecks()
-    .AddCheck("API", () => HealthCheckResult.Healthy("API is running"))
-    .AddCheck<CosmosDbHealthCheckExtension>("CosmosDB", tags: new[] { "ready" }); // Use AddCheck here
-
-// Register dependencies
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IServiceBusFactory>(p =>
+{
+    var serviceBusNamespace = GetConfigValue("KEYVAULT_SEC_SERVICEBUS_NAMESPACE", "SEC_SERVICEBUS_NAMESPACE");
+    var serviceBusFactory = new ServiceBusFactory(
+        KeyVaultFactory.GetSecret(builder.Configuration, serviceBusNamespace)
+    );
+    return serviceBusFactory;
+});
+builder.Services.AddScoped<IServiceBusService>(provider =>
+{
+    var queueName = GetConfigValue("KEYVAULT_SEC_SERVICEBUS_USERS_QUEUE", "SEC_SERVICEBUS_USERS_QUEUE");
+    var serviceBusFactory = provider.GetRequiredService<IServiceBusFactory>();
+    var logger = provider.GetRequiredService<ISuperLogger<ServiceBusService>>();
+
+    return new ServiceBusService(KeyVaultFactory.GetSecret(builder.Configuration, queueName), serviceBusFactory, logger);
+});
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IAuthenticationValidationService, AuthenticationValidationService>();
 builder.Services.AddScoped<IDtoMapper, DtoMapper>();
 
 var app = builder.Build();

@@ -4,12 +4,8 @@ using Tamagotchi.Backend.SharedLibrary.Entities;
 
 namespace Tamagotchi.Backend.Users.Api.Entities;
 
-public class UserEntity : CosmosBaseEntity
+public class UserEntity : UserBaseEntity
 {
-    [Required]
-    [JsonProperty(PropertyName = "username")]
-    public required string Username { get; set; }
-
     [Required]
     [EmailAddress]
     [JsonProperty(PropertyName = "email")]

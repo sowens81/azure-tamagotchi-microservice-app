@@ -11,26 +11,6 @@ namespace Tamagotchi.Backend.Users.Api.Controllers;
 [Produces("application/json")]
 public class UsersController(IUserService _userService) : ControllerBase
 {
-    [HttpPost("register")]
-    [Consumes("application/json")]
-    [Produces("application/json")]
-    [SwaggerOperation(
-        Summary = "Registers a new user",
-        Description = "Registers a user with the provided details if the username and email are unique.",
-        OperationId = "RegisterUser",
-        Tags = new[] { "User Management" }
-    )]
-    [ProducesResponseType(typeof(ApiSuccessResponse<UserRegistrationResponseDto>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status429TooManyRequests)]
-    [ProducesResponseType(typeof(ApiFailureResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> RegisterUser([FromBody] UserRegistrationRequestDto userRegistrationRequest)
-    {
-        var transactionId = HttpContext.Items["TransactionId"]?.ToString() ?? Guid.NewGuid().ToString();
-        return await _userService.CreateUserAsync(userRegistrationRequest, transactionId);
-    }
-
     [HttpGet]
     [SwaggerOperation(
         Summary = "Retrieves all users",

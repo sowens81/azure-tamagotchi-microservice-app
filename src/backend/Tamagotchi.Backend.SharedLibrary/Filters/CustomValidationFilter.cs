@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.ComponentModel.DataAnnotations;
+using System.Transactions;
 using Tamagotchi.Backend.SharedLibrary.Attributes;
 using Tamagotchi.Backend.SharedLibrary.Models;
 
@@ -10,6 +11,7 @@ public class CustomValidationFilter : IActionFilter
 {
     public void OnActionExecuting(ActionExecutingContext context)
     {
+
         var errors = new List<ValidationError>();
 
         //Check if the email exists in the query string
@@ -56,11 +58,14 @@ public class CustomValidationFilter : IActionFilter
                     ?.ResourceIdentifier;
             }
 
+            var transactionId = context.HttpContext.Items["TransactionId"]?.ToString() ?? Guid.NewGuid().ToString();
+
             context.Result = new BadRequestObjectResult(
                 ApiFailureResponse.ValidationFailureResponse(
                     "One or more validation errors occurred.",
                     errors,
-                    $"EC-BPL-400"
+                    $"EC-BPL-400",
+                    new { TransactionId = transactionId }
                 )
             );
         }

@@ -19,13 +19,15 @@ namespace Tamagotchi.Backend.Users.Api.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IDtoMapper _dtoMapper;
+        private readonly IServiceBusService _serviceBusService;
 
         public UserService(
             IUserRepository repository,
             IPasswordHasher passwordHasher,
             IJwtTokenService jwtTokenService,
             ISuperLogger<UserService> logger,
-            IDtoMapper dtoMapper
+            IDtoMapper dtoMapper,
+            IServiceBusService serviceBusService
         )
         {
             _userRepository = repository;
@@ -33,6 +35,7 @@ namespace Tamagotchi.Backend.Users.Api.Services
             _jwtTokenService = jwtTokenService;
             _log = logger;
             _dtoMapper = dtoMapper;
+            _serviceBusService = serviceBusService;
         }
 
         public async Task<IActionResult> CreateUserAsync(
@@ -114,6 +117,20 @@ namespace Tamagotchi.Backend.Users.Api.Services
 
                 if (addUserResponse.ResponseCode == 201)
                 {
+
+                    var message = new SbusMessage<UserRegistration>()
+                    {
+                        MessageType = "USER_REGISTER",
+                        TransactionId = transactionId,
+                        Payload = new UserRegistration()
+                        {
+                            UserId = userEntity.UserId,
+                            Username = userEntity.Username
+                        }
+                    };
+
+                    var sendMessage = _serviceBusService.SendMessageAsync(message.MessageType, message, transactionId);
+
                     return new CreatedResult(
                         $"/users/{userEntity.UserId}",
                         new ApiSuccessResponse<UserRegistrationResponseDto>
